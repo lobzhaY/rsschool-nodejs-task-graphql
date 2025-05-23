@@ -15,14 +15,15 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     async handler(req) {
+      console.log('GraphQL handler triggered:', req.body);
       return graphql({
         schema: mainSchema,
         source: req.body.query,
         variableValues: req.body.variables,
         contextValue: {
           prisma,
-        }
-      })
+        },
+      });
     },
   });
 };
