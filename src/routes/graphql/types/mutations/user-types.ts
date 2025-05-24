@@ -6,7 +6,7 @@ export interface UserInputDto {
 }
 
 export const CreateUserInputGQL = new GraphQLInputObjectType({
-  name: 'CreateUserInputGQL',
+  name: 'CreateUserInput',
   fields: {
     name: { type: new GraphQLNonNull(GraphQLString) },
     balance: { type: new GraphQLNonNull(GraphQLFloat) },
@@ -14,7 +14,7 @@ export const CreateUserInputGQL = new GraphQLInputObjectType({
 });
 
 export const ChangeUserInputGQL = new GraphQLInputObjectType({
-  name: 'ChangeUserInputGQL',
+  name: 'ChangeUserInput',
   fields: {
     name: { type: GraphQLString },
     balance: { type: GraphQLFloat },

@@ -8,7 +8,7 @@ export interface CreatePostInputDto {
 };
 
 export const CreatePostInputGQL = new GraphQLInputObjectType({
-  name: 'CreatePostInputGQL',
+  name: 'CreatePostInput',
   fields: {
     title: { type: new GraphQLNonNull(GraphQLString) },
     content: { type: new GraphQLNonNull(GraphQLString) },
@@ -22,7 +22,7 @@ export interface ChangePostInputDto {
 }
 
 export const ChangePostInputGQL = new GraphQLInputObjectType({
-  name: 'ChangePostInputGQL',
+  name: 'ChangePostInput',
   fields: {
     title: { type: GraphQLString },
     content: { type: GraphQLString },

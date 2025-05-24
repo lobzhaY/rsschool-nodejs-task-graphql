@@ -15,7 +15,7 @@ export interface ProfileInputDto {
 }
 
 export const CreateProfileInputGQL = new GraphQLInputObjectType({
-  name: 'CreateProfileInputGQL',
+  name: 'CreateProfileInput',
   fields: {
     isMale: { type: new GraphQLNonNull(GraphQLBoolean) },
     yearOfBirth: { type: new GraphQLNonNull(GraphQLInt) },
@@ -25,7 +25,7 @@ export const CreateProfileInputGQL = new GraphQLInputObjectType({
 });
 
 export const ChangeProfileInputGQL = new GraphQLInputObjectType({
-  name: 'ChangeProfileInputGQL',
+  name: 'ChangeProfileInput',
   fields: {
     isMale: { type: GraphQLBoolean },
     yearOfBirth: { type: GraphQLInt },
