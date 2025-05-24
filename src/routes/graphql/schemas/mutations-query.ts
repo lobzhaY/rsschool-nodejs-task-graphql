@@ -7,6 +7,12 @@ import {
 } from '../types/mutations/user-types.js';
 import { GraphQLContext } from './root-query.js';
 import { UUIDType } from '../types/uuid.js';
+import { ProfileGQL } from '../types/query/profile-types.js';
+import {
+  ChangeProfileInputGQL,
+  CreateProfileInputGQL,
+  ProfileInputDto,
+} from '../types/mutations/profile-types.js';
 
 export const Mutations = new GraphQLObjectType({
   name: 'MutationsQueryType',
@@ -58,6 +64,67 @@ export const Mutations = new GraphQLObjectType({
           select: { id: true },
         });
         return deletedUser.id;
+      },
+    },
+    // profile
+    createProfile: {
+      type: ProfileGQL,
+      args: {
+        dto: { type: new GraphQLNonNull(CreateProfileInputGQL) },
+      },
+      resolve: async (
+        _source,
+        { dto }: { dto: ProfileInputDto },
+        { prisma }: GraphQLContext,
+      ) => {
+        const existingProfile = await prisma.profile.findUnique({
+          where: { userId: dto.userId },
+        });
+
+        if (existingProfile) {
+          throw new Error(`User ${dto.userId} already has a profile.`);
+        }
+        const newProfile = await prisma.profile.create({
+          data: dto,
+        });
+        return newProfile;
+      },
+    },
+    changeProfile: {
+      type: ProfileGQL,
+      args: {
+        id: { type: new GraphQLNonNull(UUIDType) },
+        dto: { type: new GraphQLNonNull(ChangeProfileInputGQL) },
+      },
+      resolve:  async (
+        _source,
+        { dto, id }: { id: string; dto: ProfileInputDto },
+        { prisma }: GraphQLContext,
+      ) => {
+        const existingProfile = await prisma.profile.findUnique({ where: { id } });
+
+        if (!existingProfile) {
+          throw new Error(`Profile with id "${id}" not found.`);
+        }
+        const updateProfile = await prisma.profile.update({
+          where: { id },
+          data: dto,
+        });
+
+        return updateProfile;
+      },
+    },
+    deleteProfile: {
+      type: new GraphQLNonNull(GraphQLString),
+      args: {
+        id: { type: new GraphQLNonNull(UUIDType) },
+      },
+      resolve: async (_source, { id }: { id: string }, { prisma }: GraphQLContext) => {
+        const deletedProfile = await prisma.profile.delete({
+          where: { id },
+          select: { id: true },
+        });
+        return deletedProfile.id;
       },
     },
   },
