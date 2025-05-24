@@ -1,7 +1,9 @@
 import { GraphQLList, GraphQLNonNull, GraphQLObjectType } from 'graphql';
 import { MemberTypeGQL, MemberTypeIdEnum, MemberTypeNameEnum } from '../types/member-types.js';
-import { MemberType, PrismaClient } from '@prisma/client';
+import { MemberType, PrismaClient, User } from '@prisma/client';
 import DataLoader from 'dataloader';
+import { UserTypeGQL } from '../types/user-types.js';
+import { UUIDType } from '../types/uuid.js';
 
 interface Loaders {
   memberLoader: DataLoader<string, MemberType>;
@@ -14,7 +16,7 @@ export interface GraphQLContext extends Loaders {
 export const RootQuery = new GraphQLObjectType({
   name: 'RootQueryType',
   fields: {
-
+    // members
     memberTypes: {
       type: new GraphQLList(MemberTypeGQL),
       resolve: async (
@@ -25,12 +27,31 @@ export const RootQuery = new GraphQLObjectType({
         return prisma.memberType.findMany();
       },
     },
-
      memberType: {
       type: MemberTypeGQL,
       args: { id: { type: new GraphQLNonNull(MemberTypeIdEnum) } },
       resolve: async (_source, { id }: { id: MemberTypeNameEnum }, { prisma }: GraphQLContext) => {
         const memberType = await prisma.memberType.findUnique({ where: { id } });
+
+        return memberType;
+      }
+    },
+    // users
+    users: {
+      type: new GraphQLList(UserTypeGQL),
+      resolve: async (
+        _: unknown,
+        __: unknown,
+        { prisma }: GraphQLContext,
+      ): Promise<User[]> => {
+        return prisma.user.findMany();
+      },
+    },
+     user: {
+      type: UserTypeGQL,
+      args: { id: { type: new GraphQLNonNull(UUIDType) } },
+      resolve: async (_source, { id }: { id: string }, { prisma }: GraphQLContext) => {
+        const memberType = await prisma.user.findUnique({ where: { id } });
 
         return memberType;
       }
