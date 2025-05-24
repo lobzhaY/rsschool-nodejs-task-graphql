@@ -5,6 +5,7 @@ import DataLoader from 'dataloader';
 import { UserTypeGQL } from '../types/user-types.js';
 import { UUIDType } from '../types/uuid.js';
 import { PostGQL } from '../types/post-types.js';
+import { ProfileGQL } from '../types/profile-types.js';
 
 interface Loaders {
   memberLoader: DataLoader<string, MemberType>;
@@ -66,7 +67,6 @@ export const RootQuery = new GraphQLObjectType({
         return posts;
       },
     },
-
     post: {
       type: PostGQL,
       args: { id: { type: new GraphQLNonNull(UUIDType) } },
@@ -76,6 +76,23 @@ export const RootQuery = new GraphQLObjectType({
         return post;
       }
     },
-    
+    // profiles
+    profiles: {
+      type: new GraphQLList(ProfileGQL),
+      resolve: async (_source, _args, { prisma }: GraphQLContext) => {
+        const posts = await prisma.profile.findMany();
+
+        return posts;
+      },
+    },
+    profile: {
+      type: ProfileGQL,
+      args: { id: { type: new GraphQLNonNull(UUIDType) } },
+      resolve: async (_source, { id }: { id: string }, { prisma }: GraphQLContext) => {
+        const post = await prisma.profile.findUnique({ where: { id } });
+
+        return post;
+      }
+    },
   },
 });
