@@ -1,11 +1,15 @@
 import { GraphQLList, GraphQLNonNull, GraphQLObjectType } from 'graphql';
-import { MemberTypeGQL, MemberTypeIdEnum, MemberTypeNameEnum } from '../types/member-types.js';
+import {
+  MemberTypeGQL,
+  MemberTypeIdEnum,
+  MemberTypeNameEnum,
+} from '../types/query/member-types.js';
 import { MemberType, PrismaClient, User } from '@prisma/client';
 import DataLoader from 'dataloader';
-import { UserTypeGQL } from '../types/user-types.js';
+import { UserTypeGQL } from '../types/query/user-types.js';
 import { UUIDType } from '../types/uuid.js';
-import { PostGQL } from '../types/post-types.js';
-import { ProfileGQL } from '../types/profile-types.js';
+import { PostGQL } from '../types/query/post-types.js';
+import { ProfileGQL } from '../types/query/profile-types.js';
 
 interface Loaders {
   memberLoader: DataLoader<string, MemberType>;
@@ -29,14 +33,18 @@ export const RootQuery = new GraphQLObjectType({
         return prisma.memberType.findMany();
       },
     },
-     memberType: {
+    memberType: {
       type: MemberTypeGQL,
       args: { id: { type: new GraphQLNonNull(MemberTypeIdEnum) } },
-      resolve: async (_source, { id }: { id: MemberTypeNameEnum }, { prisma }: GraphQLContext) => {
+      resolve: async (
+        _source,
+        { id }: { id: MemberTypeNameEnum },
+        { prisma }: GraphQLContext,
+      ) => {
         const memberType = await prisma.memberType.findUnique({ where: { id } });
 
         return memberType;
-      }
+      },
     },
     // users
     users: {
@@ -49,14 +57,14 @@ export const RootQuery = new GraphQLObjectType({
         return prisma.user.findMany();
       },
     },
-     user: {
+    user: {
       type: UserTypeGQL,
       args: { id: { type: new GraphQLNonNull(UUIDType) } },
       resolve: async (_source, { id }: { id: string }, { prisma }: GraphQLContext) => {
         const memberType = await prisma.user.findUnique({ where: { id } });
 
         return memberType;
-      }
+      },
     },
     // posts
     posts: {
@@ -74,7 +82,7 @@ export const RootQuery = new GraphQLObjectType({
         const post = await prisma.post.findUnique({ where: { id } });
 
         return post;
-      }
+      },
     },
     // profiles
     profiles: {
@@ -92,7 +100,7 @@ export const RootQuery = new GraphQLObjectType({
         const profile = await prisma.profile.findUnique({ where: { id } });
 
         return profile;
-      }
+      },
     },
   },
 });
