@@ -4,6 +4,7 @@ import { MemberType, PrismaClient, User } from '@prisma/client';
 import DataLoader from 'dataloader';
 import { UserTypeGQL } from '../types/user-types.js';
 import { UUIDType } from '../types/uuid.js';
+import { PostGQL } from '../types/post-types.js';
 
 interface Loaders {
   memberLoader: DataLoader<string, MemberType>;
@@ -56,5 +57,25 @@ export const RootQuery = new GraphQLObjectType({
         return memberType;
       }
     },
+    // posts
+    posts: {
+      type: new GraphQLList(PostGQL),
+      resolve: async (_source, _args, { prisma }: GraphQLContext) => {
+        const posts = await prisma.post.findMany();
+
+        return posts;
+      },
+    },
+
+    post: {
+      type: PostGQL,
+      args: { id: { type: new GraphQLNonNull(UUIDType) } },
+      resolve: async (_source, { id }: { id: string }, { prisma }: GraphQLContext) => {
+        const post = await prisma.post.findUnique({ where: { id } });
+
+        return post;
+      }
+    },
+    
   },
 });
