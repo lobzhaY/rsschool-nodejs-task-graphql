@@ -13,6 +13,8 @@ import {
   CreateProfileInputGQL,
   ProfileInputDto,
 } from '../types/mutations/profile-types.js';
+import { PostGQL } from '../types/query/post-types.js';
+import { ChangePostInputDto, ChangePostInputGQL, CreatePostInputDto, CreatePostInputGQL } from '../types/mutations/post-types.js';
 
 export const Mutations = new GraphQLObjectType({
   name: 'MutationsQueryType',
@@ -127,5 +129,56 @@ export const Mutations = new GraphQLObjectType({
         return deletedProfile.id;
       },
     },
+    // post
+    createPost: {
+      type: PostGQL,
+      args: {
+        dto: { type: new GraphQLNonNull(CreatePostInputGQL) },
+      },
+      resolve: async (
+        _source,
+        { dto }: { dto: CreatePostInputDto },
+        { prisma }: GraphQLContext,
+      ) => {
+        const newPost = await prisma.post.create({
+          data: dto,
+        });
+        return newPost;
+      },
+    },
+    changePost: {
+      type: PostGQL,
+      args: {
+        id: { type: new GraphQLNonNull(UUIDType) },
+        dto: { type: new GraphQLNonNull(ChangePostInputGQL) },
+      },
+      resolve:  async (
+        _source,
+        { dto, id }: { id: string; dto: ChangePostInputDto },
+        { prisma }: GraphQLContext,
+      ) => {
+        const updatePost = await prisma.post.update({
+          where: { id },
+          data: dto,
+        });
+
+        return updatePost;
+      },
+    },
+    deletePost: {
+      type: new GraphQLNonNull(GraphQLString),
+      args: {
+        id: { type: new GraphQLNonNull(UUIDType) },
+      },
+      resolve: async (_source, { id }: { id: string }, { prisma }: GraphQLContext) => {
+        const deletedPost = await prisma.post.delete({
+          where: { id },
+          select: { id: true },
+        });
+        return deletedPost.id;
+      },
+    },
+
+
   },
 });
