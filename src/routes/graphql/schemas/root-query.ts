@@ -80,18 +80,18 @@ export const RootQuery = new GraphQLObjectType({
     profiles: {
       type: new GraphQLList(ProfileGQL),
       resolve: async (_source, _args, { prisma }: GraphQLContext) => {
-        const posts = await prisma.profile.findMany();
+        const profile = await prisma.profile.findMany();
 
-        return posts;
+        return profile;
       },
     },
     profile: {
       type: ProfileGQL,
       args: { id: { type: new GraphQLNonNull(UUIDType) } },
       resolve: async (_source, { id }: { id: string }, { prisma }: GraphQLContext) => {
-        const post = await prisma.profile.findUnique({ where: { id } });
+        const profile = await prisma.profile.findUnique({ where: { id } });
 
-        return post;
+        return profile;
       }
     },
   },
