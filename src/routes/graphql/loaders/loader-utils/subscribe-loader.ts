@@ -30,4 +30,4 @@ export const getSubscribedToUserLoader = (prisma: PrismaClient) => async (userId
     });
 
     return userIds.map((id) => subscribersMap.get(id) || []);
-};
+}; 

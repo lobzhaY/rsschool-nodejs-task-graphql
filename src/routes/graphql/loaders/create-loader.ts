@@ -9,8 +9,8 @@ import { getPosteByAuthorIdLoader, getPostLoader } from "./loader-utils/post-loa
 export const createLoaders = (prisma: PrismaClient) => ({
     memberLoader: new DataLoader(getMemberLoaderData(prisma)),
     usersLoader: new DataLoader(getUserLoaderData(prisma)),
-    userSubscribedToLoader: getUserSubscribedToLoader(prisma),
-    subscribedToUserLoader: getSubscribedToUserLoader(prisma),
+    userSubscribedToLoader: new DataLoader(getUserSubscribedToLoader(prisma)),
+    subscribedToUserLoader: new DataLoader(getSubscribedToUserLoader(prisma)),
     profileLoader: new DataLoader(getProfileLoader(prisma)),
     profileByUserIdLoader: new DataLoader(getProfileByUserIdLoader(prisma)),
     postLoader: new DataLoader(getPostLoader(prisma)),

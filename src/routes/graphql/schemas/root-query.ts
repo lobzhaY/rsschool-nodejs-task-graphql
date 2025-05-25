@@ -1,22 +1,40 @@
-import { GraphQLList, GraphQLNonNull, GraphQLObjectType } from 'graphql';
+import {
+  GraphQLList,
+  GraphQLNonNull,
+  GraphQLObjectType,
+  GraphQLResolveInfo,
+} from 'graphql';
 import {
   MemberTypeGQL,
   MemberTypeIdEnum,
   MemberTypeNameEnum,
 } from '../types/query/member-types.js';
-import { MemberType, PrismaClient, User } from '@prisma/client';
+import { MemberType, Post, PrismaClient, Profile, User } from '@prisma/client';
 import DataLoader from 'dataloader';
 import { UserTypeGQL } from '../types/query/user-types.js';
 import { UUIDType } from '../types/uuid.js';
 import { PostGQL } from '../types/query/post-types.js';
 import { ProfileGQL } from '../types/query/profile-types.js';
+import {
+  parseResolveInfo,
+  ResolveTree,
+  simplifyParsedResolveInfoFragmentWithType,
+} from 'graphql-parse-resolve-info';
 
 interface Loaders {
   memberLoader: DataLoader<string, MemberType>;
+  usersLoader: DataLoader<string, User>;
+  userSubscribedToLoader: DataLoader<string, User[]>;
+  subscribedToUserLoader: DataLoader<string, User[]>;
+  profileLoader: DataLoader<string, Profile>;
+  profileByUserIdLoader: DataLoader<string, Profile>;
+  postLoader: DataLoader<string, Post>;
+  postLoaderByAuthorIdLoader: DataLoader<string, Post>;
 }
 
-export interface GraphQLContext extends Loaders {
+export interface GraphQLContext {
   prisma: PrismaClient;
+  loaders: Loaders;
 }
 
 export const RootQuery = new GraphQLObjectType({
@@ -39,11 +57,9 @@ export const RootQuery = new GraphQLObjectType({
       resolve: async (
         _source,
         { id }: { id: MemberTypeNameEnum },
-        { prisma }: GraphQLContext,
+        { loaders }: GraphQLContext,
       ) => {
-        const memberType = await prisma.memberType.findUnique({ where: { id } });
-
-        return memberType;
+        return await loaders.memberLoader.load(id);
       },
     },
     // users
@@ -52,18 +68,51 @@ export const RootQuery = new GraphQLObjectType({
       resolve: async (
         _: unknown,
         __: unknown,
-        { prisma }: GraphQLContext,
+        { prisma, loaders }: GraphQLContext,
+        resolveInfo: GraphQLResolveInfo,
       ): Promise<User[]> => {
-        return prisma.user.findMany();
+        const parsedInfo = parseResolveInfo(resolveInfo) as ResolveTree;
+        const { fields } = simplifyParsedResolveInfoFragmentWithType(
+          parsedInfo,
+          UserTypeGQL,
+        );
+
+        const shouldIncludeUserSubscribedTo = 'userSubscribedTo' in fields;
+        const shouldIncludeSubscribedToUser = 'subscribedToUser' in fields;
+
+        const users = await prisma.user.findMany({
+          include: {
+            userSubscribedTo: shouldIncludeUserSubscribedTo,
+            subscribedToUser: shouldIncludeSubscribedToUser,
+          },
+        });
+
+        const userById = new Map(users.map((user) => [user.id, user]));
+
+        for (const user of users) {
+          if (shouldIncludeUserSubscribedTo) {
+            const subscriptions = user.userSubscribedTo
+              .map((sub) => userById.get(sub.authorId))
+              .filter(Boolean) as User[];
+            loaders.userSubscribedToLoader.prime(user.id, subscriptions);
+          }
+
+          if (shouldIncludeSubscribedToUser) {
+            const subscribers = user.subscribedToUser
+              .map((sub) => userById.get(sub.subscriberId))
+              .filter(Boolean) as User[];
+            loaders.subscribedToUserLoader.prime(user.id, subscribers);
+          }
+        }
+
+        return users;
       },
     },
     user: {
       type: UserTypeGQL,
       args: { id: { type: new GraphQLNonNull(UUIDType) } },
-      resolve: async (_source, { id }: { id: string }, { prisma }: GraphQLContext) => {
-        const memberType = await prisma.user.findUnique({ where: { id } });
-
-        return memberType;
+      resolve: async (_source, { id }: { id: string }, { loaders }: GraphQLContext) => {
+        return await loaders.usersLoader.load(id);
       },
     },
     // posts
@@ -78,10 +127,8 @@ export const RootQuery = new GraphQLObjectType({
     post: {
       type: PostGQL,
       args: { id: { type: new GraphQLNonNull(UUIDType) } },
-      resolve: async (_source, { id }: { id: string }, { prisma }: GraphQLContext) => {
-        const post = await prisma.post.findUnique({ where: { id } });
-
-        return post;
+      resolve: async (_source, { id }: { id: string }, { loaders }: GraphQLContext) => {
+        return await loaders.postLoader.load(id);
       },
     },
     // profiles
@@ -96,10 +143,8 @@ export const RootQuery = new GraphQLObjectType({
     profile: {
       type: ProfileGQL,
       args: { id: { type: new GraphQLNonNull(UUIDType) } },
-      resolve: async (_source, { id }: { id: string }, { prisma }: GraphQLContext) => {
-        const profile = await prisma.profile.findUnique({ where: { id } });
-
-        return profile;
+      resolve: async (_source, { id }: { id: string }, { loaders }: GraphQLContext) => {
+        return loaders.profileLoader.load(id);
       },
     },
   },

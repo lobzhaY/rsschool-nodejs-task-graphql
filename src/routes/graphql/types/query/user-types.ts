@@ -26,38 +26,26 @@ export const UserTypeGQL: GraphQLObjectType<User, GraphQLContext> = new GraphQLO
         balance: { type: new GraphQLNonNull(GraphQLFloat) },
         profile: {
           type: ProfileGQL,
-          resolve: async ({ id }, _args, { prisma }) => {
-            return prisma.profile.findUnique({ where: { userId: id } });
+          resolve: async ({ id }, _args, { loaders }) => {
+            return await loaders.profileByUserIdLoader.load(id);
           },
         },
         posts: {
           type: NonNullListOf(PostGQL),
-          resolve: async ({ id }, _args, { prisma }) => {
-            const posts = await prisma.post.findMany({ where: { authorId: id } });
-
-            return posts;
+          resolve: async ({ id }, _args, { loaders }) => {
+            return await loaders.postLoaderByAuthorIdLoader.load(id);
           },
         },
         userSubscribedTo: {
           type: NonNullListOf(UserTypeGQL),
-          resolve: async ({ id }, _args, { prisma }) => {
-            const subscriptions = await prisma.subscribersOnAuthors.findMany({
-              where: { subscriberId: id },
-              include: { author: true },
-            });
-
-            return subscriptions.map((subscription) => subscription.author);
+          resolve: async (parent, _args, { loaders }) => {
+            return await loaders.userSubscribedToLoader.load(parent.id);
           },
         },
         subscribedToUser: {
           type: NonNullListOf(UserTypeGQL),
-          resolve: async ({ id }, _args, { prisma }) => {
-            const subscriptions = await prisma.subscribersOnAuthors.findMany({
-              where: { authorId: id },
-              include: { subscriber: true },
-            });
-
-            return subscriptions.map((sub) => sub.subscriber);
+          resolve: async ({ id }, _args, { loaders }) => {
+            return await loaders.subscribedToUserLoader.load(id);
           },
         },
       };
